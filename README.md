@@ -9,7 +9,7 @@
     $ brew install maven
     ```
 2. Sauce Labs Credentials
-    * In the terminal, export the Sauce Labs credentials for the *sc19troubleshooting* user as environmental variables:
+    * In the terminal, export the Sauce Labs credentials for the **sc19troubleshooting** user as environmental variables:
     ```
     $ export SAUCECON19_USERNAME=sc19troubleshooting
     $ export SAUCECON19_ACCESS_KEY=<sc19troubleshooting access key>
@@ -27,15 +27,13 @@
     
 ### Running Tests
 
-#####Testing in Parallel:
-
-This will run all tests other than one to reproduce exceeding concurrency:
+This will run all tests in parallel other than that to reproduce exceeding concurrency:
 
 ```
 $ mvn test
 ```
 
-This will run only the test to reproduce exceeding concurrency:
+This will run only the tests to reproduce exceeding concurrency:
 
 ```
 $ mvn test -Dtest=ExceededConcurrencyErrorTest
