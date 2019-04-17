@@ -1,4 +1,4 @@
-package com.saucelabs;
+package com.saucelabs.errors;
 
 import com.saucelabs.common.SauceOnDemandAuthentication;
 import com.saucelabs.common.SauceOnDemandSessionIdProvider;
@@ -22,11 +22,10 @@ import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 
 @RunWith(ConcurrentParameterized.class)
-public class FailedToStartErrorTest implements SauceOnDemandSessionIdProvider {
+public class PreRunErrorTest implements SauceOnDemandSessionIdProvider {
 
     /**
-     * Test to reproduce "Infrastructure Error -- The Sauce VMs failed to start the browser or device" due to invalid chromedriverVersion
-     * (trying to use chrome 64 with chromedriver 2.46)
+     * Test to reproduce "Failed to download prerun executable" error due to non-existent prerun executable/wrong filename
      */
 
     /**
@@ -73,7 +72,7 @@ public class FailedToStartErrorTest implements SauceOnDemandSessionIdProvider {
      * @param version
      * @param browser
      */
-    public FailedToStartErrorTest(String os, String version, String browser) {
+    public PreRunErrorTest(String os, String version, String browser) {
         super();
         this.os = os;
         this.version = version;
@@ -87,7 +86,7 @@ public class FailedToStartErrorTest implements SauceOnDemandSessionIdProvider {
     @ConcurrentParameterized.Parameters
     public static LinkedList browsersStrings() {
         LinkedList browsers = new LinkedList();
-        browsers.add(new String[]{"Windows 10", "64", "chrome"});
+        browsers.add(new String[]{"macOS 10.13", "latest", "chrome"});
         return browsers;
     }
 
@@ -111,8 +110,11 @@ public class FailedToStartErrorTest implements SauceOnDemandSessionIdProvider {
         //capabilities.setCapability("extendedDebugging", true);
         //capabilities.setCapability("seleniumVersion", "3.14.0");
         //capabilities.setCapability("iedriverVersion", "3.14.0");
-        capabilities.setCapability("chromedriverVersion", "2.46");
-        capabilities.setCapability("name", "Failed To Start Error Test: " + browser + " " + version + ", " + os);
+        //capabilities.setCapability("avoidProxy", true);
+        capabilities.setCapability("prerun","sauce-storage:notawesomescript.sh");
+        //capabilities.setCapability("prerun","sauce-storage:awesomescript.sh");
+
+        capabilities.setCapability("name", "PreRun Error Test: " + browser + " " + version + ", " + os);
         capabilities.setCapability("build", "SauceCon 19 Troubleshooting, " + datetime.format(System.currentTimeMillis()));
         this.driver = new RemoteWebDriver(
                 new URL("https://" + authentication.getUsername() + ":" + authentication.getAccessKey() + "@ondemand.saucelabs.com/wd/hub"),
@@ -133,7 +135,7 @@ public class FailedToStartErrorTest implements SauceOnDemandSessionIdProvider {
         WebElement el = driver.findElement(By.name("q"));
         el.clear();
         el.sendKeys(Keys.ESCAPE);
-        el.sendKeys(" rabbits");
+        el.sendKeys("rabbits");
         el.submit();
 
     }

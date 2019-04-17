@@ -1,19 +1,15 @@
-package com.saucelabs;
+package com.saucelabs.demos;
 
 import com.saucelabs.common.SauceOnDemandAuthentication;
 import com.saucelabs.common.SauceOnDemandSessionIdProvider;
 import com.saucelabs.junit.ConcurrentParameterized;
 import com.saucelabs.junit.SauceOnDemandTestWatcher;
-import com.saucelabs.saucerest.SauceREST;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
@@ -23,11 +19,10 @@ import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 
 @RunWith(ConcurrentParameterized.class)
-public class UserTerminatedErrorTest implements SauceOnDemandSessionIdProvider {
+public class ExtDebugTest implements SauceOnDemandSessionIdProvider {
 
     /**
-     * Test to reproduce "User Abandoned Test -- User terminated" due to terminating test
-     * Here done using SauceREST, but same effect when cancelling test in dashboard
+     * Test to reproduce "No active tunnel found for identifier" error
      */
 
     /**
@@ -39,13 +34,8 @@ public class UserTerminatedErrorTest implements SauceOnDemandSessionIdProvider {
     /**
      * JUnit Rule which will mark the Sauce Job as passed/failed when the test succeeds or fails.
      */
-    //@Rule
-    //public SauceOnDemandTestWatcher resultReportingTestWatcher = new SauceOnDemandTestWatcher(this, authentication);
-
-    /**
-     * The instance of the Sauce OnDemand Java REST API client.
-     */
-    private final SauceREST sauceREST;
+    @Rule
+    public SauceOnDemandTestWatcher resultReportingTestWatcher = new SauceOnDemandTestWatcher(this, authentication);
 
     /**
      * Represents the browser to be used as part of the test run.
@@ -64,12 +54,12 @@ public class UserTerminatedErrorTest implements SauceOnDemandSessionIdProvider {
      */
     private String sessionId;
 
-    private SimpleDateFormat datetime = new SimpleDateFormat("yyyyMMddHHmm");
-
     /**
      * The {@link WebDriver} instance which is used to perform browser interactions with.
      */
     private WebDriver driver;
+
+    private SimpleDateFormat datetime = new SimpleDateFormat("yyyyMMddHHmm");
 
     /**
      * Constructs a new instance of the test.  The constructor requires three string parameters, which represent the operating
@@ -79,12 +69,11 @@ public class UserTerminatedErrorTest implements SauceOnDemandSessionIdProvider {
      * @param version
      * @param browser
      */
-    public UserTerminatedErrorTest(String os, String version, String browser) {
+    public ExtDebugTest(String os, String version, String browser) {
         super();
         this.os = os;
         this.version = version;
         this.browser = browser;
-        sauceREST = new SauceREST(authentication.getUsername(), authentication.getAccessKey());
     }
 
     /**
@@ -94,7 +83,7 @@ public class UserTerminatedErrorTest implements SauceOnDemandSessionIdProvider {
     @ConcurrentParameterized.Parameters
     public static LinkedList browsersStrings() {
         LinkedList browsers = new LinkedList();
-        browsers.add(new String[]{"Windows 10", "latest", "chrome"});
+        browsers.add(new String[]{"macOS 10.14", "latest", "chrome"});
         return browsers;
     }
 
@@ -115,11 +104,12 @@ public class UserTerminatedErrorTest implements SauceOnDemandSessionIdProvider {
             capabilities.setCapability(CapabilityType.VERSION, version);
         }
         capabilities.setCapability(CapabilityType.PLATFORM, os);
-        //capabilities.setCapability("extendedDebugging", true);
+        capabilities.setCapability("extendedDebugging", true);
         //capabilities.setCapability("seleniumVersion", "3.14.0");
         //capabilities.setCapability("iedriverVersion", "3.14.0");
-        capabilities.setCapability("name", "User Terminated Error Test: " + browser + " " + version + ", " + os);
-        capabilities.setCapability("build", "SauceCon 19 Troubleshooting, " + datetime.format(System.currentTimeMillis()));
+
+        capabilities.setCapability("name", "Extended Debugging Test: " + browser + " " + version + ", " + os);
+        capabilities.setCapability("build", "SauceCon 19 Troubleshooting Demo Tests, " + datetime.format(System.currentTimeMillis()));
         this.driver = new RemoteWebDriver(
                 new URL("https://" + authentication.getUsername() + ":" + authentication.getAccessKey() + "@ondemand.saucelabs.com/wd/hub"),
                 capabilities);
@@ -136,11 +126,16 @@ public class UserTerminatedErrorTest implements SauceOnDemandSessionIdProvider {
 
         driver.get("https://www.google.com");
 
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("console.log('before google search')");
+
         WebElement el = driver.findElement(By.name("q"));
         el.clear();
         el.sendKeys(Keys.ESCAPE);
         el.sendKeys("rabbits");
         el.submit();
+
+        js.executeScript("console.log('after google search')");
 
     }
 
@@ -151,9 +146,7 @@ public class UserTerminatedErrorTest implements SauceOnDemandSessionIdProvider {
      */
     @After
     public void tearDown() throws Exception {
-        //driver.quit();
-        // use SauceREST to terminate job
-        sauceREST.stopJob(sessionId);
+        driver.quit();
     }
 
     /**

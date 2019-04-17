@@ -1,4 +1,4 @@
-package com.saucelabs;
+package com.saucelabs.errors;
 
 import com.saucelabs.common.SauceOnDemandAuthentication;
 import com.saucelabs.common.SauceOnDemandSessionIdProvider;

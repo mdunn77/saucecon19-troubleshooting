@@ -1,4 +1,4 @@
-package com.saucelabs;
+package com.saucelabs.demos;
 
 import com.saucelabs.common.SauceOnDemandAuthentication;
 import com.saucelabs.common.SauceOnDemandSessionIdProvider;
@@ -16,16 +16,20 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 
+import static org.junit.Assert.assertTrue;
+
 @RunWith(ConcurrentParameterized.class)
-public class MisconfiguredErrorTest2 implements SauceOnDemandSessionIdProvider {
+public class FailingTest implements SauceOnDemandSessionIdProvider {
 
     /**
-     * Test to reproduce "Misconfigured -- Unsupported OS/browser/version/device combo" due to asking for IE on mac OS
+     * Test to reproduce "No active tunnel found for identifier" error
      */
 
     /**
@@ -72,7 +76,7 @@ public class MisconfiguredErrorTest2 implements SauceOnDemandSessionIdProvider {
      * @param version
      * @param browser
      */
-    public MisconfiguredErrorTest2(String os, String version, String browser) {
+    public FailingTest(String os, String version, String browser) {
         super();
         this.os = os;
         this.version = version;
@@ -86,7 +90,7 @@ public class MisconfiguredErrorTest2 implements SauceOnDemandSessionIdProvider {
     @ConcurrentParameterized.Parameters
     public static LinkedList browsersStrings() {
         LinkedList browsers = new LinkedList();
-        browsers.add(new String[]{"macOS 10.14", "latest", "internet explorer"});
+        browsers.add(new String[]{"macOS 10.13", "latest", "chrome"});
         return browsers;
     }
 
@@ -110,8 +114,9 @@ public class MisconfiguredErrorTest2 implements SauceOnDemandSessionIdProvider {
         //capabilities.setCapability("extendedDebugging", true);
         //capabilities.setCapability("seleniumVersion", "3.14.0");
         //capabilities.setCapability("iedriverVersion", "3.14.0");
-        capabilities.setCapability("name", "Misconfigured Error Test 2: " + browser + " " + version + ", " + os);
-        capabilities.setCapability("build", "SauceCon 19 Troubleshooting, " + datetime.format(System.currentTimeMillis()));
+
+        capabilities.setCapability("name", "Failing Test: " + browser + " " + version + ", " + os);
+        capabilities.setCapability("build", "SauceCon 19 Troubleshooting Demo Tests, " + datetime.format(System.currentTimeMillis()));
         this.driver = new RemoteWebDriver(
                 new URL("https://" + authentication.getUsername() + ":" + authentication.getAccessKey() + "@ondemand.saucelabs.com/wd/hub"),
                 capabilities);
@@ -131,9 +136,18 @@ public class MisconfiguredErrorTest2 implements SauceOnDemandSessionIdProvider {
         WebElement el = driver.findElement(By.name("q"));
         el.clear();
         el.sendKeys(Keys.ESCAPE);
-        el.sendKeys(" rabbits");
+        el.sendKeys("rabbits");
         el.submit();
 
+        el = waitForElementByXPath("//*[@id=\"rhs_block\"]/div[1]/div[1]/div/div[1]/div[2]/div[2]/div/div[2]/div/div/div[2]/div[1]/span");
+        assertTrue(el.getText().equalsIgnoreCase("rabbits"));
+
+    }
+
+    public WebElement waitForElementByXPath(String locator) {
+        WebDriverWait wait = new WebDriverWait(driver, 30);
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(locator)));
+        return driver.findElement(By.xpath(locator));
     }
 
     /**

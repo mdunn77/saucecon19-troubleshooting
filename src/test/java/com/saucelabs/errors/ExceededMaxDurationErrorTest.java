@@ -1,4 +1,4 @@
-package com.saucelabs;
+package com.saucelabs.errors;
 
 import com.saucelabs.common.SauceOnDemandAuthentication;
 import com.saucelabs.common.SauceOnDemandSessionIdProvider;
@@ -22,10 +22,10 @@ import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 
 @RunWith(ConcurrentParameterized.class)
-public class PreRunErrorTest implements SauceOnDemandSessionIdProvider {
+public class ExceededMaxDurationErrorTest implements SauceOnDemandSessionIdProvider {
 
     /**
-     * Test to reproduce "Failed to download prerun executable" error due to non-existent prerun executable/wrong filename
+     * Test to reproduce "Test exceeded maximum duration" error
      */
 
     /**
@@ -37,8 +37,8 @@ public class PreRunErrorTest implements SauceOnDemandSessionIdProvider {
     /**
      * JUnit Rule which will mark the Sauce Job as passed/failed when the test succeeds or fails.
      */
-    @Rule
-    public SauceOnDemandTestWatcher resultReportingTestWatcher = new SauceOnDemandTestWatcher(this, authentication);
+    //@Rule
+    //public SauceOnDemandTestWatcher resultReportingTestWatcher = new SauceOnDemandTestWatcher(this, authentication);
 
     /**
      * Represents the browser to be used as part of the test run.
@@ -72,7 +72,7 @@ public class PreRunErrorTest implements SauceOnDemandSessionIdProvider {
      * @param version
      * @param browser
      */
-    public PreRunErrorTest(String os, String version, String browser) {
+    public ExceededMaxDurationErrorTest(String os, String version, String browser) {
         super();
         this.os = os;
         this.version = version;
@@ -86,7 +86,7 @@ public class PreRunErrorTest implements SauceOnDemandSessionIdProvider {
     @ConcurrentParameterized.Parameters
     public static LinkedList browsersStrings() {
         LinkedList browsers = new LinkedList();
-        browsers.add(new String[]{"macOS 10.13", "latest", "chrome"});
+        browsers.add(new String[]{"macOS 10.14", "latest", "chrome"});
         return browsers;
     }
 
@@ -110,11 +110,8 @@ public class PreRunErrorTest implements SauceOnDemandSessionIdProvider {
         //capabilities.setCapability("extendedDebugging", true);
         //capabilities.setCapability("seleniumVersion", "3.14.0");
         //capabilities.setCapability("iedriverVersion", "3.14.0");
-        //capabilities.setCapability("avoidProxy", true);
-        capabilities.setCapability("prerun","sauce-storage:notawesomescript.sh");
-        //capabilities.setCapability("prerun","sauce-storage:awesomescript.sh");
-
-        capabilities.setCapability("name", "PreRun Error Test: " + browser + " " + version + ", " + os);
+        capabilities.setCapability("maxDuration", 60);
+        capabilities.setCapability("name", "Exceeded Max Duration Error Test: " + browser + " " + version + ", " + os);
         capabilities.setCapability("build", "SauceCon 19 Troubleshooting, " + datetime.format(System.currentTimeMillis()));
         this.driver = new RemoteWebDriver(
                 new URL("https://" + authentication.getUsername() + ":" + authentication.getAccessKey() + "@ondemand.saucelabs.com/wd/hub"),
@@ -130,13 +127,17 @@ public class PreRunErrorTest implements SauceOnDemandSessionIdProvider {
     @Test
     public void loadpage() throws Exception {
 
-        driver.get("https://www.google.com");
+        for (int i = 0; i < 100; i++) {
 
-        WebElement el = driver.findElement(By.name("q"));
-        el.clear();
-        el.sendKeys(Keys.ESCAPE);
-        el.sendKeys("rabbits");
-        el.submit();
+            driver.get("https://www.google.com");
+
+            WebElement el = driver.findElement(By.name("q"));
+            el.clear();
+            el.sendKeys(Keys.ESCAPE);
+            el.sendKeys(i + " rabbits");
+            el.submit();
+
+        }
 
     }
 

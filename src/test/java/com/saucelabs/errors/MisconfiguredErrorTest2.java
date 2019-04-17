@@ -1,4 +1,4 @@
-package com.saucelabs;
+package com.saucelabs.errors;
 
 import com.saucelabs.common.SauceOnDemandAuthentication;
 import com.saucelabs.common.SauceOnDemandSessionIdProvider;
@@ -22,10 +22,10 @@ import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 
 @RunWith(ConcurrentParameterized.class)
-public class ExceededMaxDurationErrorTest implements SauceOnDemandSessionIdProvider {
+public class MisconfiguredErrorTest2 implements SauceOnDemandSessionIdProvider {
 
     /**
-     * Test to reproduce "Test exceeded maximum duration" error
+     * Test to reproduce "Misconfigured -- Unsupported OS/browser/version/device combo" due to asking for IE on mac OS
      */
 
     /**
@@ -37,8 +37,8 @@ public class ExceededMaxDurationErrorTest implements SauceOnDemandSessionIdProvi
     /**
      * JUnit Rule which will mark the Sauce Job as passed/failed when the test succeeds or fails.
      */
-    //@Rule
-    //public SauceOnDemandTestWatcher resultReportingTestWatcher = new SauceOnDemandTestWatcher(this, authentication);
+    @Rule
+    public SauceOnDemandTestWatcher resultReportingTestWatcher = new SauceOnDemandTestWatcher(this, authentication);
 
     /**
      * Represents the browser to be used as part of the test run.
@@ -72,7 +72,7 @@ public class ExceededMaxDurationErrorTest implements SauceOnDemandSessionIdProvi
      * @param version
      * @param browser
      */
-    public ExceededMaxDurationErrorTest(String os, String version, String browser) {
+    public MisconfiguredErrorTest2(String os, String version, String browser) {
         super();
         this.os = os;
         this.version = version;
@@ -86,7 +86,7 @@ public class ExceededMaxDurationErrorTest implements SauceOnDemandSessionIdProvi
     @ConcurrentParameterized.Parameters
     public static LinkedList browsersStrings() {
         LinkedList browsers = new LinkedList();
-        browsers.add(new String[]{"macOS 10.14", "latest", "chrome"});
+        browsers.add(new String[]{"macOS 10.14", "latest", "internet explorer"});
         return browsers;
     }
 
@@ -110,8 +110,7 @@ public class ExceededMaxDurationErrorTest implements SauceOnDemandSessionIdProvi
         //capabilities.setCapability("extendedDebugging", true);
         //capabilities.setCapability("seleniumVersion", "3.14.0");
         //capabilities.setCapability("iedriverVersion", "3.14.0");
-        capabilities.setCapability("maxDuration", 60);
-        capabilities.setCapability("name", "Exceeded Max Duration Error Test: " + browser + " " + version + ", " + os);
+        capabilities.setCapability("name", "Misconfigured Error Test 2: " + browser + " " + version + ", " + os);
         capabilities.setCapability("build", "SauceCon 19 Troubleshooting, " + datetime.format(System.currentTimeMillis()));
         this.driver = new RemoteWebDriver(
                 new URL("https://" + authentication.getUsername() + ":" + authentication.getAccessKey() + "@ondemand.saucelabs.com/wd/hub"),
@@ -127,17 +126,13 @@ public class ExceededMaxDurationErrorTest implements SauceOnDemandSessionIdProvi
     @Test
     public void loadpage() throws Exception {
 
-        for (int i = 0; i < 100; i++) {
+        driver.get("https://www.google.com");
 
-            driver.get("https://www.google.com");
-
-            WebElement el = driver.findElement(By.name("q"));
-            el.clear();
-            el.sendKeys(Keys.ESCAPE);
-            el.sendKeys(i + " rabbits");
-            el.submit();
-
-        }
+        WebElement el = driver.findElement(By.name("q"));
+        el.clear();
+        el.sendKeys(Keys.ESCAPE);
+        el.sendKeys(" rabbits");
+        el.submit();
 
     }
 

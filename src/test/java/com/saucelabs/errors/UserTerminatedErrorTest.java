@@ -1,9 +1,10 @@
-package com.saucelabs;
+package com.saucelabs.errors;
 
 import com.saucelabs.common.SauceOnDemandAuthentication;
 import com.saucelabs.common.SauceOnDemandSessionIdProvider;
 import com.saucelabs.junit.ConcurrentParameterized;
 import com.saucelabs.junit.SauceOnDemandTestWatcher;
+import com.saucelabs.saucerest.SauceREST;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -22,11 +23,11 @@ import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 
 @RunWith(ConcurrentParameterized.class)
-public class ExceededConcurrencyErrorTest implements SauceOnDemandSessionIdProvider {
+public class UserTerminatedErrorTest implements SauceOnDemandSessionIdProvider {
 
     /**
-     * Test to reproduce "Misconfigured -- You've exceeded your Sauce Labs concurrency limit" error by starting more than 10 tests which take over 10 mins
-     * (sc19troubleshooting user has a CCY of 10)
+     * Test to reproduce "User Abandoned Test -- User terminated" due to terminating test
+     * Here done using SauceREST, but same effect when cancelling test in dashboard
      */
 
     /**
@@ -38,8 +39,13 @@ public class ExceededConcurrencyErrorTest implements SauceOnDemandSessionIdProvi
     /**
      * JUnit Rule which will mark the Sauce Job as passed/failed when the test succeeds or fails.
      */
-    @Rule
-    public SauceOnDemandTestWatcher resultReportingTestWatcher = new SauceOnDemandTestWatcher(this, authentication);
+    //@Rule
+    //public SauceOnDemandTestWatcher resultReportingTestWatcher = new SauceOnDemandTestWatcher(this, authentication);
+
+    /**
+     * The instance of the Sauce OnDemand Java REST API client.
+     */
+    private final SauceREST sauceREST;
 
     /**
      * Represents the browser to be used as part of the test run.
@@ -58,12 +64,12 @@ public class ExceededConcurrencyErrorTest implements SauceOnDemandSessionIdProvi
      */
     private String sessionId;
 
+    private SimpleDateFormat datetime = new SimpleDateFormat("yyyyMMddHHmm");
+
     /**
      * The {@link WebDriver} instance which is used to perform browser interactions with.
      */
     private WebDriver driver;
-
-    private SimpleDateFormat datetime = new SimpleDateFormat("yyyyMMddHHmm");
 
     /**
      * Constructs a new instance of the test.  The constructor requires three string parameters, which represent the operating
@@ -73,11 +79,12 @@ public class ExceededConcurrencyErrorTest implements SauceOnDemandSessionIdProvi
      * @param version
      * @param browser
      */
-    public ExceededConcurrencyErrorTest(String os, String version, String browser) {
+    public UserTerminatedErrorTest(String os, String version, String browser) {
         super();
         this.os = os;
         this.version = version;
         this.browser = browser;
+        sauceREST = new SauceREST(authentication.getUsername(), authentication.getAccessKey());
     }
 
     /**
@@ -87,18 +94,7 @@ public class ExceededConcurrencyErrorTest implements SauceOnDemandSessionIdProvi
     @ConcurrentParameterized.Parameters
     public static LinkedList browsersStrings() {
         LinkedList browsers = new LinkedList();
-        browsers.add(new String[]{"macOS 10.14", "latest", "chrome"});
-        browsers.add(new String[]{"macOS 10.14", "latest-1", "chrome"});
-        browsers.add(new String[]{"macOS 10.14", "latest", "firefox"});
-        browsers.add(new String[]{"macOS 10.13", "latest-1", "firefox"});
-        browsers.add(new String[]{"macOS 10.13", "latest", "safari"});
-        browsers.add(new String[]{"macOS 10.14", "latest", "safari"});
         browsers.add(new String[]{"Windows 10", "latest", "chrome"});
-        browsers.add(new String[]{"Windows 10", "latest-1", "chrome"});
-        browsers.add(new String[]{"Windows 10", "latest", "internet explorer"});
-        browsers.add(new String[]{"Windows 10", "latest", "MicrosoftEdge"});
-        browsers.add(new String[]{"Windows 10", "latest", "firefox"});
-        browsers.add(new String[]{"Windows 10", "latest-1", "firefox"});
         return browsers;
     }
 
@@ -122,9 +118,8 @@ public class ExceededConcurrencyErrorTest implements SauceOnDemandSessionIdProvi
         //capabilities.setCapability("extendedDebugging", true);
         //capabilities.setCapability("seleniumVersion", "3.14.0");
         //capabilities.setCapability("iedriverVersion", "3.14.0");
-
-        capabilities.setCapability("name", "Exceeded Concurrency Error Test: " + browser + " " + version + ", " + os);
-        capabilities.setCapability("build", "SauceCon 19 Troubleshooting Exceeded Concurrency, " + datetime.format(System.currentTimeMillis()));
+        capabilities.setCapability("name", "User Terminated Error Test: " + browser + " " + version + ", " + os);
+        capabilities.setCapability("build", "SauceCon 19 Troubleshooting, " + datetime.format(System.currentTimeMillis()));
         this.driver = new RemoteWebDriver(
                 new URL("https://" + authentication.getUsername() + ":" + authentication.getAccessKey() + "@ondemand.saucelabs.com/wd/hub"),
                 capabilities);
@@ -147,12 +142,6 @@ public class ExceededConcurrencyErrorTest implements SauceOnDemandSessionIdProvi
         el.sendKeys("rabbits");
         el.submit();
 
-        //now we need to waste 10 minutes so a test will time out in the queue, but not hit idle timeout
-        for (int i = 0; i < 30; i++) {
-            Thread.sleep(30000);
-            driver.getTitle();
-        }
-
     }
 
     /**
@@ -162,7 +151,9 @@ public class ExceededConcurrencyErrorTest implements SauceOnDemandSessionIdProvi
      */
     @After
     public void tearDown() throws Exception {
-        driver.quit();
+        //driver.quit();
+        // use SauceREST to terminate job
+        sauceREST.stopJob(sessionId);
     }
 
     /**
